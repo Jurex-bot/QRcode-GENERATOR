@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REXPH QR | Futuristic QR Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #0afc0a;
+            --secondary: #00b4d8;
+            --bg-dark: #0a0a12;
+            --bg-darker: #050508;
+            --text: #e0e0e0;
+            --glow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 180, 216, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(10, 252, 10, 0.1) 0%, transparent 20%),
+                linear-gradient(to bottom, var(--bg-darker), var(--bg-dark));
+            overflow-x: hidden;
+        }
+        
+        header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--primary);
+            box-shadow: var(--glow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(10, 252, 10, 0.1), transparent);
+            animation: scan 3s linear infinite;
+        }
+        
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            font-size: 2.5rem;
+            text-shadow: var(--glow);
+            letter-spacing: 0.2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+        
+        .input-section {
+            background-color: rgba(10, 10, 20, 0.7);
+            border: 1px solid var(--secondary);
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 15px rgba(0, 180, 216, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .input-section::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(10, 252, 10, 0.05), transparent);
+            pointer-events: none;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.8rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            color: var(--text);
+            font-size: 1rem;
+            border-radius: 4px;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 10px rgba(0, 180, 216, 0.5);
+        }
+        
+        button {
+            background-color: var(--bg-darker);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.7rem 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button:hover {
+            background-color: rgba(10, 252, 10, 0.1);
+            box-shadow: var(--glow);
+            transform: translateY(-2px);
+        }
+        
+        button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(10, 252, 10, 0.4), transparent);
+            transition: 0.5s;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        .qr-result {
+            display: none;
+            background-color: rgba(10, 10, 20, 0.7);
+            border: 1px solid var(--primary);
+            border-radius: 5px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--glow);
+            margin-top: 2rem;
+            position: relative;
+        }
+        
+        .qr-result.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #qr-code {
+            margin: 1rem auto;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .binary-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .binary-digit {
+            position: absolute;
+            color: var(--primary);
+            font-size: 0.8rem;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            border-top: 1px solid var(--secondary);
+            margin-top: auto;
+            font-size: 0.9rem;
+            color: var(--secondary);
+        }
+        
+        .options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .option-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+            color: var(--text);
+            border-radius: 4px;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 10px rgba(0, 180, 216, 0.5);
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .options {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .option-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>REXPH QR</h1>
+        <div class="binary-animation" id="binary-animation"></div>
+    </header>
+    
+    <div class="container">
+        <div class="input-section">
+            <label for="qr-data">Enter text or URL to encode:</label>
+            <textarea id="qr-data" placeholder="Type your text or URL here..."></textarea>
+            
+            <div class="options">
+                <div class="option-group">
+                    <label for="qr-color">QR Color:</label>
+                    <select id="qr-color">
+                        <option value="#0afc0a">Matrix Green</option>
+                        <option value="#00b4d8">Cyber Blue</option>
+                        <option value="#ffffff">White</option>
+                        <option value="#ff00ff">Neon Pink</option>
+                        <option value="#00ffff">Cyan</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="qr-size">QR Size:</label>
+                    <select id="qr-size">
+                        <option value="200">Medium (200px)</option>
+                        <option value="100">Small (100px)</option>
+                        <option value="300">Large (300px)</option>
+                        <option value="400">Extra Large (400px)</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="qr-error">Error Correction:</label>
+                    <select id="qr-error">
+                        <option value="L">Low (7%)</option>
+                        <option value="M" selected>Medium (15%)</option>
+                        <option value="Q">Quartile (25%)</option>
+                        <option value="H">High (30%)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="generate-btn">Generate QR Code</button>
+        </div>
+        
+        <div class="qr-result" id="qr-result">
+            <h2>Your REXPH QR Code</h2>
+            <div id="qr-code"></div>
+            <button id="download-btn">Download QR Code</button>
+        </div>
+    </div>
+    
+    <footer>
+        <p>REXPH QR Generator v1.0 | &copy; ALL Reserved 2025 Futuristic REXHack Labs</p>
+    </footer>
+    
+    <script>
+        // Binary animation
+        const binaryAnimation = document.getElementById('binary-animation');
+        const chars = '01';
+        
+        function createBinary() {
+            const binaryDigit = document.createElement('div');
+            binaryDigit.className = 'binary-digit';
+            binaryDigit.textContent = chars.charAt(Math.floor(Math.random() * chars.length));
+            binaryDigit.style.left = Math.random() * 100 + 'vw';
+            binaryDigit.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            binaryDigit.style.animationDelay = Math.random() * 2 + 's';
+            binaryDigit.style.opacity = Math.random();
+            binaryAnimation.appendChild(binaryDigit);
+            
+            setTimeout(() => {
+                binaryDigit.remove();
+            }, 5000);
+        }
+        
+        setInterval(createBinary, 100);
+        
+        // QR Code Generator
+        const generateBtn = document.getElementById('generate-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const qrData = document.getElementById('qr-data');
+        const qrResult = document.getElementById('qr-result');
+        const qrCodeElement = document.getElementById('qr-code');
+        const qrColor = document.getElementById('qr-color');
+        const qrSize = document.getElementById('qr-size');
+        const qrError = document.getElementById('qr-error');
+        
+        generateBtn.addEventListener('click', generateQRCode);
+        downloadBtn.addEventListener('click', downloadQRCode);
+        
+        function generateQRCode() {
+            const data = qrData.value.trim();
+            
+            if (!data) {
+                alert('Please enter some text or URL to generate QR code');
+                return;
+            }
+            
+            // Clear previous QR code
+            qrCodeElement.innerHTML = '';
+            
+            const options = {
+                color: {
+                    dark: qrColor.value,
+                    light: '#00000000' // transparent background
+                },
+                width: parseInt(qrSize.value),
+                errorCorrectionLevel: qrError.value
+            };
+            
+            // Create canvas element
+            const canvas = document.createElement('canvas');
+            qrCodeElement.appendChild(canvas);
+            
+            // Generate QR code
+            QRCode.toCanvas(canvas, data, options, (error) => {
+                if (error) {
+                    console.error(error);
+                    alert('Error generating QR code. Please try again.');
+                    return;
+                }
+                
+                qrResult.classList.add('active');
+            });
+        }
+        
+        function downloadQRCode() {
+            if (!qrResult.classList.contains('active')) {
+                alert('Please generate a QR code first');
+                return;
+            }
+            
+            const canvas = qrCodeElement.querySelector('canvas');
+            const link = document.createElement('a');
+            link.download = 'cyber-qr-code.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Generate QR code when pressing Enter in textarea
+        qrData.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateQRCode();
+            }
+        });
+    </script>
+</body>
+  </html>
